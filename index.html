@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplicativo de Mensagens</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar">
+      <h1>Contatos</h1>
+      <!-- Campo de pesquisa -->
+      <input type="text" id="searchContact" placeholder="Pesquisar contatos..." oninput="filterContacts()">
+
+      <ul class="contact-list" id="contactList">
+        <li class="contact" onclick="showChat(0)">
+          <img src="midia/alvarox.png" alt="ALVAROX">
+          ALVAROX
+        </li>
+        <li class="contact" onclick="showChat(1)">
+          <img src="midia/pele.jpg" alt="pelé">
+          pelé
+        </li>
+        <li class="contact" onclick="showChat(2)">
+          <img src="midia/neymar.jpg" alt="neymar">
+          neymar
+        </li>
+        <!-- Adicione mais contatos aqui -->
+      </ul>
+      <h2>Adicionar Novo Contato</h2>
+      <form onsubmit="addNewContact(event)">
+        <label for="newContactName">Nome:</label>
+        <input type="text" id="newContactName" required>
+        <label for="newContactPhoto">URL da Foto:</label>
+        <input type="text" id="newContactPhoto" required>
+        <button type="submit">Adicionar Contato</button>
+      </form>
+    </div>
+
+    <div class="chat">
+      <div class="chat-header">
+        <img src="midia/alvarox.png" alt="Foto do contato" id="contactPhoto">
+        <h2 id="chatContactName">Alvarox</h2>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <!-- Mensagens serão adicionadas dinamicamente -->
+      </div>
+      <div class="chat-input">
+        <input type="text" placeholder="Digite sua mensagem..." id="messageInput">
+        <button onclick="sendMessage()">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const contacts = ["ALVAROX", "pelé", "neymar"];
+    const photos = ["midia/alvarox.png", "midia/pele.jpg", "midia/neymar.jpg"];
+    const chatData = {}; // Objeto para armazenar as mensagens de cada contato
+
+    function showChat(contactIndex) {
+      const chat = document.querySelector(".chat");
+      const chatContactName = document.getElementById("chatContactName");
+      const contactPhoto = document.getElementById("contactPhoto");
+      const chatMessages = document.getElementById("chatMessages");
+
+      const currentContact = contacts[contactIndex];
+      chatContactName.innerText = currentContact;
+      contactPhoto.src = photos[contactIndex];
+
+      // Atualiza o chatMessages com as mensagens do contato atual
+      chatMessages.innerHTML = ""; // Limpa as mensagens anteriores
+
+      if (chatData[currentContact]) {
+        for (const message of chatData[currentContact]) {
+          const messageDiv = document.createElement("div");
+          messageDiv.classList.add("message");
+          messageDiv.classList.add(message.type === "sent" ? "message-sent" : "message-received");
+          messageDiv.textContent = message.content;
+          chatMessages.appendChild(messageDiv);
+        }
+      }
+
+      chat.classList.add("active");
+    }
+
+    function sendMessage() {
+      const newMessageInput = document.getElementById("messageInput");
+      const newMessageContent = newMessageInput.value.trim();
+
+      if (newMessageContent !== "") {
+        const currentContact = document.getElementById("chatContactName").innerText;
+        const chatMessages = document.getElementById("chatMessages");
+        const sentMessage = document.createElement("div");
+        sentMessage.classList.add("message", "message-sent");
+        sentMessage.textContent = newMessageContent;
+
+        // Adicionar a nova mensagem no início da div de mensagens
+        chatMessages.prepend(sentMessage);
+
+        // Armazena a mensagem enviada no objeto chatData
+        if (!chatData[currentContact]) {
+          chatData[currentContact] = [];
+        }
+        chatData[currentContact].push({ type: "sent", content: newMessageContent });
+
+        // Simulação de resposta automática do contato
+        const receivedMessage = document.createElement("div");
+        receivedMessage.classList.add("message", "message-received");
+        receivedMessage.textContent = getAutomaticReply(newMessageContent);
+        chatMessages.prepend(receivedMessage);
+
+        // Armazena a resposta automática do contato no objeto chatData
+        chatData[currentContact].unshift({ type: "received", content: getAutomaticReply(newMessageContent) });
+
+        newMessageInput.value = "";
+      }
+    }
+
+    function getAutomaticReply(message) {
+      // Simulação de respostas automáticas do contato
+      if (message.includes("olá") || message.includes("oi")) {
+        return "Olá! Como posso ajudar?";
+      } else if (message.includes("tudo bem") || message.includes("você está bem")) {
+        return "Estou bem, obrigado! E você?";
+      } else if (message.includes("obrigado") || message.includes("valeu")) {
+        return "De nada! Estou sempre aqui para ajudar.";
+      } else {
+        return "Desculpe, não entendi. Quer um autógrafo?";
+      }
+    }
+
+    function addNewContact(event) {
+      event.preventDefault();
+      const newContactName = document.getElementById("newContactName").value.trim();
+      const newContactPhoto = document.getElementById("newContactPhoto").value.trim();
+
+      if (newContactName !== "" && newContactPhoto !== "") {
+        contacts.push(newContactName);
+        photos.push(newContactPhoto);
+
+        // Atualiza a lista de contatos
+        const contactList = document.getElementById("contactList");
+        const newContact = document.createElement("li");
+        newContact.classList.add("contact");
+        newContact.setAttribute("onclick", `showChat(${contacts.length - 1})`);
+        newContact.innerHTML = `
+          <img src="${newContactPhoto}" alt="${newContactName}">
+          ${newContactName}
+        `;
+        contactList.prepend(newContact);
+
+        // Limpa o formulário
+        document.getElementById("newContactName").value = "";
+        document.getElementById("newContactPhoto").value = "";
+      }
+    }
+
+    function filterContacts() {
+      const searchQuery = document.getElementById("searchContact").value.toLowerCase();
+      const contactList = document.getElementById("contactList");
+      const contactsElements = contactList.getElementsByClassName("contact");
+
+      for (const contactElement of contactsElements) {
+        const contactName = contactElement.innerText.toLowerCase();
+        if (contactName.includes(searchQuery)) {
+          contactElement.style.display = "block";
+        } else {
+          contactElement.style.display = "none";
+        }
+      }
+    }
+  </script>
+</body>
+  </script>
+</body>
+</html>
